@@ -18,12 +18,6 @@
 
 package glog
 
-import (
-	"os"
-	"syscall"
-	"time"
-)
-
 // abortProcess attempts to kill the current process in a way that will dump the
 // currently-running goroutines someplace useful (like stderr).
 //
@@ -32,22 +26,12 @@ import (
 // portably, we would need to add a cgo dependency and call pthread_kill.
 //
 // If successful, abortProcess does not return.
-func abortProcess() error {
-	p, err := os.FindProcess(os.Getpid())
-	if err != nil {
-		return err
-	}
-	if err := p.Signal(syscall.SIGABRT); err != nil {
-		return err
-	}
+func abortProcess() error { _ = "STUB: not implemented"; return nil }
 
-	// Sent the signal.  Now we wait for it to arrive and any SIGABRT handlers to
-	// run (and eventually terminate the process themselves).
-	//
-	// We could just "select{}" here, but there's an outside chance that would
-	// trigger the runtime's deadlock detector if there happen not to be any
-	// background goroutines running.  So we'll sleep a while first to give
-	// the signal some time.
-	time.Sleep(10 * time.Second)
-	select {}
-}
+// Sent the signal.  Now we wait for it to arrive and any SIGABRT handlers to
+// run (and eventually terminate the process themselves).
+//
+// We could just "select{}" here, but there's an outside chance that would
+// trigger the runtime's deadlock detector if there happen not to be any
+// background goroutines running.  So we'll sleep a while first to give
+// the signal some time.

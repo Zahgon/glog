@@ -51,43 +51,22 @@ type Stack struct {
 	PC []uintptr
 }
 
-func (s Stack) String() string { return string(s.Text) }
+func (s Stack) String() string { _ = "STUB: not implemented"; return "" }
 
 // Caller returns the Stack dump for the calling goroutine, starting skipDepth
 // frames before the caller of Caller.  (Caller(0) provides a dump starting at
 // the caller of this function.)
-func Caller(skipDepth int) Stack {
-	return Stack{
-		Text: CallerText(skipDepth + 1),
-		PC:   CallerPC(skipDepth + 1),
-	}
-}
+func Caller(skipDepth int) Stack { _ = "STUB: not implemented"; return *new(Stack) }
 
 // CallerText returns a textual dump of the stack starting skipDepth frames before
 // the caller.  (CallerText(0) provides a dump starting at the caller of this
 // function.)
-func CallerText(skipDepth int) []byte {
-	for n := 1 << 10; ; n *= 2 {
-		buf := make([]byte, n)
-		n := runtime.Stack(buf, false)
-		if n < len(buf) {
-			return pruneFrames(skipDepth+1+runtimeStackSelfFrames, buf[:n])
-		}
-	}
-}
+func CallerText(skipDepth int) []byte { _ = "STUB: not implemented"; return nil }
 
 // CallerPC returns a dump of the program counters of the stack starting
 // skipDepth frames before the caller.  (CallerPC(0) provides a dump starting at
 // the caller of this function.)
-func CallerPC(skipDepth int) []uintptr {
-	for n := 1 << 8; ; n *= 2 {
-		buf := make([]uintptr, n)
-		n := runtime.Callers(skipDepth+2, buf)
-		if n < len(buf) {
-			return buf[:n]
-		}
-	}
-}
+func CallerPC(skipDepth int) []uintptr { _ = "STUB: not implemented"; return nil }
 
 // pruneFrames removes the topmost skipDepth frames of the first goroutine in a
 // textual stack dump.  It overwrites the passed-in slice.
@@ -95,33 +74,6 @@ func CallerPC(skipDepth int) []uintptr {
 // If there are fewer than skipDepth frames in the first goroutine's stack,
 // pruneFrames prunes it to an empty stack and leaves the remaining contents
 // intact.
-func pruneFrames(skipDepth int, stack []byte) []byte {
-	headerLen := 0
-	for i, c := range stack {
-		if c == '\n' {
-			headerLen = i + 1
-			break
-		}
-	}
-	if headerLen == 0 {
-		return stack // No header line - not a well-formed stack trace.
-	}
+func pruneFrames(skipDepth int, stack []byte) []byte { _ = "STUB: not implemented"; return nil }
 
-	skipLen := headerLen
-	skipNewlines := skipDepth * 2
-	for ; skipLen < len(stack) && skipNewlines > 0; skipLen++ {
-		c := stack[skipLen]
-		if c != '\n' {
-			continue
-		}
-		skipNewlines--
-		skipLen++
-		if skipNewlines == 0 || skipLen == len(stack) || stack[skipLen] == '\n' {
-			break
-		}
-	}
-
-	pruned := stack[skipLen-headerLen:]
-	copy(pruned, stack[:headerLen])
-	return pruned
-}
+// No header line - not a well-formed stack trace.

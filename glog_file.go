@@ -20,14 +20,10 @@ package glog
 
 import (
 	"bufio"
-	"bytes"
-	"errors"
 	"flag"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -47,12 +43,7 @@ var (
 		" (-1 means don't buffer; 0 means buffer INFO only; ...). Has limited applicability on non-prod platforms.")
 )
 
-func createLogDirs() {
-	if *logDir != "" {
-		logDirs = append(logDirs, *logDir)
-	}
-	logDirs = append(logDirs, os.TempDir())
-}
+func createLogDirs() { _ = "STUB: not implemented"; return }
 
 var (
 	pid      = os.Getpid()
@@ -85,30 +76,11 @@ func init() {
 
 // shortHostname returns its argument, truncating at the first period.
 // For instance, given "www.google.com" it returns "www".
-func shortHostname(hostname string) string {
-	if i := strings.Index(hostname, "."); i >= 0 {
-		return hostname[:i]
-	}
-	return hostname
-}
+func shortHostname(hostname string) string { _ = "STUB: not implemented"; return "" }
 
 // logName returns a new log file name containing tag, with start time t, and
 // the name for the symlink for tag.
-func logName(tag string, t time.Time) (name, link string) {
-	name = fmt.Sprintf("%s.%s.%s.log.%s.%04d%02d%02d-%02d%02d%02d.%d",
-		program,
-		host,
-		userName,
-		tag,
-		t.Year(),
-		t.Month(),
-		t.Day(),
-		t.Hour(),
-		t.Minute(),
-		t.Second(),
-		pid)
-	return name, program + "." + tag
-}
+func logName(tag string, t time.Time) (name, link string) { _ = "STUB: not implemented"; return "", "" }
 
 var onceLogDirs sync.Once
 
@@ -117,51 +89,26 @@ var onceLogDirs sync.Once
 // successfully, create also attempts to update the symlink for that tag, ignoring
 // errors.
 func create(tag string, t time.Time, dir string) (f *os.File, filename string, err error) {
-	if dir != "" {
-		f, name, err := createInDir(dir, tag, t)
-		if err == nil {
-			return f, name, err
-		}
-		return nil, "", fmt.Errorf("log: cannot create log: %v", err)
-	}
-
-	onceLogDirs.Do(createLogDirs)
-	if len(logDirs) == 0 {
-		return nil, "", errors.New("log: no log dirs")
-	}
-	var lastErr error
-	for _, dir := range logDirs {
-		f, name, err := createInDir(dir, tag, t)
-		if err == nil {
-			return f, name, err
-		}
-		lastErr = err
-	}
-	return nil, "", fmt.Errorf("log: cannot create log: %v", lastErr)
+	_ = "STUB: not implemented"
+	return nil, "", nil
 }
 
 func createInDir(dir, tag string, t time.Time) (f *os.File, name string, err error) {
-	name, link := logName(tag, t)
-	fname := filepath.Join(dir, name)
-	// O_EXCL is important here, as it prevents a vulnerability. The general idea is that logs often
-	// live in an insecure directory (like /tmp), so an unprivileged attacker could create fname in
-	// advance as a symlink to a file the logging process can access, but the attacker cannot. O_EXCL
-	// fails the open if it already exists, thus prevent our this code from opening the existing file
-	// the attacker points us to.
-	f, err = os.OpenFile(fname, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
-	if err == nil {
-		symlink := filepath.Join(dir, link)
-		os.Remove(symlink)        // ignore err
-		os.Symlink(name, symlink) // ignore err
-		if *logLink != "" {
-			lsymlink := filepath.Join(*logLink, link)
-			os.Remove(lsymlink)         // ignore err
-			os.Symlink(fname, lsymlink) // ignore err
-		}
-		return f, fname, nil
-	}
-	return nil, "", err
+	_ = "STUB: not implemented"
+	return nil, "", nil
 }
+
+// O_EXCL is important here, as it prevents a vulnerability. The general idea is that logs often
+// live in an insecure directory (like /tmp), so an unprivileged attacker could create fname in
+// advance as a symlink to a file the logging process can access, but the attacker cannot. O_EXCL
+// fails the open if it already exists, thus prevent our this code from opening the existing file
+// the attacker points us to.
+
+// ignore err
+// ignore err
+
+// ignore err
+// ignore err
 
 // flushSyncWriter is the interface satisfied by logging destinations.
 type flushSyncWriter interface {
@@ -199,21 +146,12 @@ type stderrSink struct {
 // various stderr flags are enabled for logs of the given severity, if the log
 // message is from the standard "log" package, or if google.Init has not yet run
 // (and hence file logging is not yet initialized).
-func (s *stderrSink) Enabled(m *logsink.Meta) bool {
-	return toStderr || alsoToStderr || m.Severity >= stderrThreshold.get()
-}
+func (s *stderrSink) Enabled(m *logsink.Meta) bool { _ = "STUB: not implemented"; return false }
 
 // Emit implements logsink.Text.Emit.
 func (s *stderrSink) Emit(m *logsink.Meta, data []byte) (n int, err error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	w := s.w
-	if w == nil {
-		w = os.Stderr
-	}
-	dn, err := w.Write(data)
-	n += dn
-	return n, err
+	_ = "STUB: not implemented"
+	return 0, nil
 }
 
 // severityWriters is an array of flushSyncWriter with a value for each
@@ -231,32 +169,18 @@ type fileSink struct {
 // Enabled implements logsink.Text.Enabled.  It returns true if google.Init
 // has run and both --disable_log_to_disk and --logtostderr are false.
 func (s *fileSink) Enabled(m *logsink.Meta) bool {
-	return !toStderr
+	_ = "STUB: not implemented"
+
+	// Emit implements logsink.Text.Emit
+	return false
 }
 
-// Emit implements logsink.Text.Emit
 func (s *fileSink) Emit(m *logsink.Meta, data []byte) (n int, err error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if err = s.createMissingFiles(m.Severity); err != nil {
-		return 0, err
-	}
-	for sev := m.Severity; sev >= logsink.Info; sev-- {
-		if _, fErr := s.file[sev].Write(data); fErr != nil && err == nil {
-			err = fErr // Take the first error.
-		}
-	}
-	n = len(data)
-	if int(m.Severity) > *logBufLevel {
-		select {
-		case s.flushChan <- m.Severity:
-		default:
-		}
-	}
-
-	return n, err
+	_ = "STUB: not implemented"
+	return 0, nil
 }
+
+// Take the first error.
 
 // syncBuffer joins a bufio.Writer to its underlying file, providing access to the
 // file's Sync method and providing a wrapper for the Write method that provides log
@@ -272,74 +196,31 @@ type syncBuffer struct {
 	madeAt time.Time
 }
 
-func (sb *syncBuffer) Sync() error {
-	return sb.file.Sync()
-}
+func (sb *syncBuffer) Sync() error { _ = "STUB: not implemented"; return nil }
 
 func (sb *syncBuffer) Write(p []byte) (n int, err error) {
+	_ = "STUB: not implemented"
 	// Rotate the file if it is too large, but ensure we only do so,
 	// if rotate doesn't create a conflicting filename.
-	if sb.nbytes+uint64(len(p)) >= MaxSize {
-		now := timeNow()
-		if now.After(sb.madeAt.Add(1*time.Second)) || now.Second() != sb.madeAt.Second() {
-			if err := sb.rotateFile(now); err != nil {
-				return 0, err
-			}
-		}
-	}
-	n, err = sb.Writer.Write(p)
-	sb.nbytes += uint64(n)
-	return n, err
+	return 0, nil
 }
 
-func (sb *syncBuffer) filenames() []string {
-	return sb.names
-}
+func (sb *syncBuffer) filenames() []string { _ = "STUB: not implemented"; return nil }
 
 const footer = "\nCONTINUED IN NEXT FILE\n"
 
 // rotateFile closes the syncBuffer's file and starts a new one.
-func (sb *syncBuffer) rotateFile(now time.Time) error {
-	var err error
-	pn := "<none>"
-	file, name, err := create(sb.sev.String(), now, "")
-	sb.madeAt = now
+func (sb *syncBuffer) rotateFile(now time.Time) error { _ = "STUB: not implemented"; return nil }
 
-	if sb.file != nil {
-		// The current log file becomes the previous log at the end of
-		// this block, so save its name for use in the header of the next
-		// file.
-		pn = sb.file.Name()
-		sb.Flush()
-		// If there's an existing file, write a footer with the name of
-		// the next file in the chain, followed by the constant string
-		// \nCONTINUED IN NEXT FILE\n to make continuation detection simple.
-		sb.file.Write([]byte("Next log: "))
-		sb.file.Write([]byte(name))
-		sb.file.Write([]byte(footer))
-		sb.file.Close()
-	}
+// The current log file becomes the previous log at the end of
+// this block, so save its name for use in the header of the next
+// file.
 
-	sb.file = file
-	sb.names = append(sb.names, name)
-	sb.nbytes = 0
-	if err != nil {
-		return err
-	}
+// If there's an existing file, write a footer with the name of
+// the next file in the chain, followed by the constant string
+// \nCONTINUED IN NEXT FILE\n to make continuation detection simple.
 
-	sb.Writer = bufio.NewWriterSize(sb.file, bufferSize)
-
-	// Write header.
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "Log file created at: %s\n", now.Format("2006/01/02 15:04:05"))
-	fmt.Fprintf(&buf, "Running on machine: %s\n", host)
-	fmt.Fprintf(&buf, "Binary: Built with %s %s for %s/%s\n", runtime.Compiler, runtime.Version(), runtime.GOOS, runtime.GOARCH)
-	fmt.Fprintf(&buf, "Previous log: %s\n", pn)
-	fmt.Fprintf(&buf, "Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg\n")
-	n, err := sb.file.Write(buf.Bytes())
-	sb.nbytes += uint64(n)
-	return err
-}
+// Write header.
 
 // bufferSize sizes the buffer associated with each log file. It's large
 // so that log records can accumulate without the logging thread blocking
@@ -350,100 +231,37 @@ const bufferSize = 256 * 1024
 // upTo that have not already been created.
 // s.mu is held.
 func (s *fileSink) createMissingFiles(upTo logsink.Severity) error {
-	if s.file[upTo] != nil {
-		return nil
-	}
-	now := time.Now()
-	// Files are created in increasing severity order, so we can be assured that
-	// if a high severity logfile exists, then so do all of lower severity.
-	for sev := logsink.Info; sev <= upTo; sev++ {
-		if s.file[sev] != nil {
-			continue
-		}
-		sb := &syncBuffer{
-			sink: s,
-			sev:  sev,
-		}
-		if err := sb.rotateFile(now); err != nil {
-			return err
-		}
-		s.file[sev] = sb
-	}
+	_ = "STUB: not implemented"
 	return nil
 }
 
+// Files are created in increasing severity order, so we can be assured that
+// if a high severity logfile exists, then so do all of lower severity.
+
 // flushDaemon periodically flushes the log file buffers.
-func (s *fileSink) flushDaemon() {
-	tick := time.NewTicker(30 * time.Second)
-	defer tick.Stop()
-	for {
-		select {
-		case <-tick.C:
-			s.Flush()
-		case sev := <-s.flushChan:
-			s.flush(sev)
-		}
-	}
-}
+func (s *fileSink) flushDaemon() { _ = "STUB: not implemented"; return }
 
 // Flush flushes all pending log I/O.
 func Flush() {
-	sinks.file.Flush()
+	_ = "STUB: not implemented"
+
+	// Flush flushes all the logs and attempts to "sync" their data to disk.
+	return
 }
 
-// Flush flushes all the logs and attempts to "sync" their data to disk.
-func (s *fileSink) Flush() error {
-	return s.flush(logsink.Info)
-}
+func (s *fileSink) Flush() error { _ = "STUB: not implemented"; return nil }
 
 // flush flushes all logs of severity threshold or greater.
-func (s *fileSink) flush(threshold logsink.Severity) error {
-	var firstErr error
-	updateErr := func(err error) {
-		if err != nil && firstErr == nil {
-			firstErr = err
-		}
-	}
+func (s *fileSink) flush(threshold logsink.Severity) error { _ = "STUB: not implemented"; return nil }
 
-	// Remember where we flushed, so we can call sync without holding
-	// the lock.
-	var files []flushSyncWriter
-	func() {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		// Flush from fatal down, in case there's trouble flushing.
-		for sev := logsink.Fatal; sev >= threshold; sev-- {
-			if file := s.file[sev]; file != nil {
-				updateErr(file.Flush())
-				files = append(files, file)
-			}
-		}
-	}()
+// Remember where we flushed, so we can call sync without holding
+// the lock.
 
-	for _, file := range files {
-		updateErr(file.Sync())
-	}
-
-	return firstErr
-}
+// Flush from fatal down, in case there's trouble flushing.
 
 // Names returns the names of the log files holding the FATAL, ERROR,
 // WARNING, or INFO logs. Returns ErrNoLog if the log for the given
 // level doesn't exist (e.g. because no messages of that level have been
 // written). This may return multiple names if the log type requested
 // has rolled over.
-func Names(s string) ([]string, error) {
-	severity, err := logsink.ParseSeverity(s)
-	if err != nil {
-		return nil, err
-	}
-
-	sinks.file.mu.Lock()
-	defer sinks.file.mu.Unlock()
-	f := sinks.file.file[severity]
-	if f == nil {
-		return nil, ErrNoLog
-	}
-
-	return f.filenames(), nil
-}
+func Names(s string) ([]string, error) { _ = "STUB: not implemented"; return nil, nil }

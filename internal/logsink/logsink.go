@@ -17,9 +17,6 @@ package logsink
 import (
 	"bytes"
 	"context"
-	"fmt"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -51,29 +48,12 @@ const (
 	Fatal
 )
 
-func (s Severity) String() string {
-	switch s {
-	case Info:
-		return "INFO"
-	case Warning:
-		return "WARNING"
-	case Error:
-		return "ERROR"
-	case Fatal:
-		return "FATAL"
-	}
-	return fmt.Sprintf("%T(%d)", s, s)
-}
+func (s Severity) String() string { _ = "STUB: not implemented"; return "" }
 
 // ParseSeverity returns the case-insensitive Severity value for the given string.
 func ParseSeverity(name string) (Severity, error) {
-	name = strings.ToUpper(name)
-	for s := Info; s <= Fatal; s++ {
-		if s.String() == name {
-			return s, nil
-		}
-	}
-	return -1, fmt.Errorf("logsink: invalid severity %q", name)
+	_ = "STUB: not implemented"
+	return *new(Severity), nil
 }
 
 // Meta is metadata about a logging call.
@@ -176,131 +156,31 @@ var bufs sync.Pool // Pool of *bytes.Buffer.
 // The returned err is the first non-nil error encountered.
 // Sinks that are disabled by configuration should return (0, nil).
 func textPrintf(m *Meta, textSinks []Text, format string, args ...any) (n int, err error) {
+	_ = "STUB: not implemented"
 	// We expect at most file, stderr, and perhaps syslog.  If there are more,
 	// we'll end up allocating - no big deal.
-	const maxExpectedTextSinks = 3
-	var noAllocSinks [maxExpectedTextSinks]Text
-
-	sinks := noAllocSinks[:0]
-	for _, s := range textSinks {
-		if s.Enabled(m) {
-			sinks = append(sinks, s)
-		}
-	}
-	if len(sinks) == 0 && m.Severity != Fatal {
-		return 0, nil // No TextSinks specified; don't bother formatting.
-	}
-
-	bufi := bufs.Get()
-	var buf *bytes.Buffer
-	if bufi == nil {
-		buf = bytes.NewBuffer(nil)
-		bufi = buf
-	} else {
-		buf = bufi.(*bytes.Buffer)
-		buf.Reset()
-	}
-
-	// Lmmdd hh:mm:ss.uuuuuu PID/GID file:line]
-	//
-	// The "PID" entry arguably ought to be TID for consistency with other
-	// environments, but TID is not meaningful in a Go program due to the
-	// multiplexing of goroutines across threads.
-	//
-	// Avoid Fprintf, for speed. The format is so simple that we can do it quickly by hand.
-	// It's worth about 3X. Fprintf is hard.
-	const severityChar = "IWEF"
-	buf.WriteByte(severityChar[m.Severity])
-
-	_, month, day := m.Time.Date()
-	hour, minute, second := m.Time.Clock()
-	twoDigits(buf, int(month))
-	twoDigits(buf, day)
-	buf.WriteByte(' ')
-	twoDigits(buf, hour)
-	buf.WriteByte(':')
-	twoDigits(buf, minute)
-	buf.WriteByte(':')
-	twoDigits(buf, second)
-	buf.WriteByte('.')
-	nDigits(buf, 6, uint64(m.Time.Nanosecond()/1000), '0')
-	buf.WriteByte(' ')
-
-	nDigits(buf, 7, uint64(m.Thread), ' ')
-	buf.WriteByte(' ')
-
-	{
-		file := m.File
-		if i := strings.LastIndex(file, "/"); i >= 0 {
-			file = file[i+1:]
-		}
-		buf.WriteString(file)
-	}
-
-	buf.WriteByte(':')
-	{
-		var tmp [19]byte
-		buf.Write(strconv.AppendInt(tmp[:0], int64(m.Line), 10))
-	}
-	buf.WriteString("] ")
-
-	msgStart := buf.Len()
-	fmt.Fprintf(buf, format, args...)
-	if buf.Len() > MaxLogMessageLen-1 {
-		buf.Truncate(MaxLogMessageLen - 1)
-	}
-	msgEnd := buf.Len()
-	if b := buf.Bytes(); b[len(b)-1] != '\n' {
-		buf.WriteByte('\n')
-	}
-
-	for _, s := range sinks {
-		sn, sErr := s.Emit(m, buf.Bytes())
-		if sn > n {
-			n = sn
-		}
-		if sErr != nil && err == nil {
-			err = sErr
-		}
-	}
-
-	if m.Severity == Fatal {
-		savedM := *m
-		fatalMessageStore(savedEntry{
-			meta: &savedM,
-			msg:  buf.Bytes()[msgStart:msgEnd],
-		})
-	} else {
-		bufs.Put(bufi)
-	}
-	return n, err
+	return 0, nil
 }
+
+// No TextSinks specified; don't bother formatting.
+
+// Lmmdd hh:mm:ss.uuuuuu PID/GID file:line]
+//
+// The "PID" entry arguably ought to be TID for consistency with other
+// environments, but TID is not meaningful in a Go program due to the
+// multiplexing of goroutines across threads.
+//
+// Avoid Fprintf, for speed. The format is so simple that we can do it quickly by hand.
+// It's worth about 3X. Fprintf is hard.
 
 const digits = "0123456789"
 
 // twoDigits formats a zero-prefixed two-digit integer to buf.
-func twoDigits(buf *bytes.Buffer, d int) {
-	buf.WriteByte(digits[(d/10)%10])
-	buf.WriteByte(digits[d%10])
-}
+func twoDigits(buf *bytes.Buffer, d int) { _ = "STUB: not implemented"; return }
 
 // nDigits formats an n-digit integer to buf, padding with pad on the left. It
 // assumes d != 0.
-func nDigits(buf *bytes.Buffer, n int, d uint64, pad byte) {
-	var tmp [20]byte
-
-	cutoff := len(tmp) - n
-	j := len(tmp) - 1
-	for ; d > 0; j-- {
-		tmp[j] = digits[d%10]
-		d /= 10
-	}
-	for ; j >= cutoff; j-- {
-		tmp[j] = pad
-	}
-	j++
-	buf.Write(tmp[j:])
-}
+func nDigits(buf *bytes.Buffer, n int, d uint64, pad byte) { _ = "STUB: not implemented"; return }
 
 // Printf writes a log entry to all registered TextSinks in this package, then
 // to all registered StructuredSinks.
@@ -309,36 +189,15 @@ func nDigits(buf *bytes.Buffer, n int, d uint64, pad byte) {
 // The returned err is the first non-nil error encountered.
 // Sinks that are disabled by configuration should return (0, nil).
 func Printf(m *Meta, format string, args ...any) (n int, err error) {
-	m.Depth++
-	n, err = textPrintf(m, TextSinks, format, args...)
-
-	for _, sink := range StructuredSinks {
-		// TODO: Support TextSinks that implement StackWanter?
-		if sw, ok := sink.(StackWanter); ok && sw.WantStack(m) {
-			if m.Stack == nil {
-				// First, try to find a stacktrace in args, otherwise generate one.
-				for _, arg := range args {
-					if stack, ok := arg.(stackdump.Stack); ok {
-						m.Stack = &stack
-						break
-					}
-				}
-				if m.Stack == nil {
-					stack := stackdump.Caller( /* skipDepth = */ m.Depth)
-					m.Stack = &stack
-				}
-			}
-		}
-		sn, sErr := sink.Printf(m, format, args...)
-		if sn > n {
-			n = sn
-		}
-		if sErr != nil && err == nil {
-			err = sErr
-		}
-	}
-	return n, err
+	_ = "STUB: not implemented"
+	return 0, nil
 }
+
+// TODO: Support TextSinks that implement StackWanter?
+
+// First, try to find a stacktrace in args, otherwise generate one.
+
+/* skipDepth = */
 
 // The sets of sinks to which logs should be written.
 //
@@ -389,5 +248,6 @@ type StructuredTextWrapper struct {
 
 // Printf forwards logs to all Text sinks registered in the StructuredTextWrapper.
 func (w *StructuredTextWrapper) Printf(meta *Meta, format string, args ...any) (n int, err error) {
-	return textPrintf(meta, w.TextSinks, format, args...)
+	_ = "STUB: not implemented"
+	return 0, nil
 }
